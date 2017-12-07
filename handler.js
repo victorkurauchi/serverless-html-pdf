@@ -2,45 +2,63 @@
 
 const fs = require('fs');
 const path = require('path');
-const execFile = require('child_process').execFile;
+const spawn = require('child_process').spawn;
 
-module.exports.print = (event, context, callback) => {
-  console.log(event);
-  const body = JSON.parse(event.body);
-  const phantomjs = path.resolve('bin/phantomjs-linux');
-  const rasterize = path.resolve('lib/rasterize.js');
-  const outputPDF = '/tmp/output.pdf';
-  const url = body.url;
+module.exports.convert = (event, context, callback) => {
+  const outputPDF = path.resolve('/tmp/output.pdf');
+  // const params = JSON.parse(event.body);
+  // console.log('event', event)
+  const params = event.body;
+  console.log('params', params)
+  const html = unescape(params.html);
+  // const html = event.html;
+  // const phantomjs = path.resolve('bin/phantomjs-linux');
+  const phantomjs = path.resolve('bin/phantomjs-mac');
+  const config = path.resolve('lib/config.js');
 
-  if (!url) {
-    const err = 'url parameter is undefined';
-    return callback(err, {
-      statusCode: 500,
-      body: JSON.stringify({ 'error': err })
-    });
+  console.log('html', typeof html);
+  console.log(html);
+  console.log(html.length + " characters, " + Buffer.byteLength(html, 'utf8') + " bytes");
+
+  if (fs.existsSync(outputPDF)) {
+    fs.unlinkSync(outputPDF);
   }
 
-  execFile(phantomjs, [rasterize, url, outputPDF, "A4", 0.68], (err, stdout, stderr) => {
-    console.log('execute phantomjs');
-    if (err) {
-      console.log(err);
-      callback(err, {
-        statusCode: 500,
-        body: JSON.stringify({
-          'error': err
-        }),
-      });
-    }
+  fs.closeSync(fs.openSync(outputPDF, 'w'));
+
+  const childArgs = [
+    config,
+    html,
+    outputPDF
+  ];
+
+  const child = spawn(phantomjs, childArgs);
+
+  child.stdout.on('data', function (data) {
+    console.log('stdout: ' + data.toString());
+  });
+
+  child.stderr.on('data', function (data) {
+    console.log('exists output error', fs.existsSync(outputPDF));
+    console.log('stderr: ' + data.toString());
+    callback(data.toString(), {
+      statusCode: 500,
+      body: data.toString()
+    });
+  });
+
+  child.on('exit', function (code) {
+    console.log('output dir', outputPDF);
+    console.log('exists output', fs.existsSync(outputPDF));
+    console.log('child process exited with code ' + code.toString());
     const output = fs.readFileSync(outputPDF);
     callback(null, {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials' : true
       },
       body: output.toString('base64')
     });
   });
-
-  // Use this code if you don't use the http event with the LAMBDA-PROXY integration
-  // callback(null, { message: 'Go Serverless v1.0! Your function executed successfully!', event });
-};
+}

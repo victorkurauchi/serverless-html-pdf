@@ -16,21 +16,20 @@ service: serverless-pdf
 provider:
   name: aws
   runtime: nodejs4.3
-  stage: stage
-  region: us-west-2
-  profile: serverless
+  stage: dev
+  region: us-east-1
+  timeout: 10
+  # region: us-west-2
+  # profile: serverless
 
 functions:
-  print:
-    handler: handler.print
+  convert:
+    handler: handler.convert
     events:
       - http:
           method: post
-          path: print
+          path: convert
           cors: true
-
-# plugins:
-#   - serverless-webpack
 
 package:
   exclude:
@@ -38,4 +37,6 @@ package:
     - bin/**
   include:
     - bin/phantomjs-linux
-    - lib/rasterize.js
+    - lib/config.js
+    - lib/teste.html
+    - output/**
