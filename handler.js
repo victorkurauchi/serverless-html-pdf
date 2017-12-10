@@ -4,21 +4,31 @@ const fs = require('fs');
 const path = require('path');
 const spawn = require('child_process').spawn;
 
+function bytesToSize(bytes) {
+  var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  if (bytes == 0) return '0 Byte';
+  var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+  return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+};
+
 module.exports.convert = (event, context, callback) => {
   const outputPDF = path.resolve('/tmp/output.pdf');
   // const params = JSON.parse(event.body);
   // console.log('event', event)
-  const params = event.body;
-  console.log('params', params)
-  const html = unescape(params.html);
+  // const params = event.body;
+  // console.log('params', params)
+  // const html = unescape(params.html);
   // const html = event.html;
   // const phantomjs = path.resolve('bin/phantomjs-linux');
   const phantomjs = path.resolve('bin/phantomjs-mac');
   const config = path.resolve('lib/config.js');
 
-  console.log('html', typeof html);
-  console.log(html);
-  console.log(html.length + " characters, " + Buffer.byteLength(html, 'utf8') + " bytes");
+  // console.log('html', typeof html);
+  // console.log(html);
+  let html = fs.readFileSync('./tests/index-sem-loadingcss.html', 'utf8')
+  // console.log(html)
+  
+  console.log(html.length + " characters, " + bytesToSize(Buffer.byteLength(html, 'utf8')));
 
   if (fs.existsSync(outputPDF)) {
     fs.unlinkSync(outputPDF);
