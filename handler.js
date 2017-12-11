@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const spawn = require('child_process').spawn;
+//var Base64 = require('js-base64').Base64
 
 function bytesToSize(bytes) {
   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
@@ -13,21 +14,24 @@ function bytesToSize(bytes) {
 
 module.exports.convert = (event, context, callback) => {
   const outputPDF = path.resolve('/tmp/output.pdf');
-  // const params = JSON.parse(event.body);
+  const params = JSON.parse(event.body);
   // console.log('event', event)
   // const params = event.body;
   // console.log('params', params)
-  // const html = unescape(params.html);
+
   // const html = event.html;
-  // const phantomjs = path.resolve('bin/phantomjs-linux');
-  const phantomjs = path.resolve('bin/phantomjs-mac');
+  const phantomjs = path.resolve('bin/phantomjs-linux');
+  //const phantomjs = path.resolve('bin/phantomjs-mac');
   const config = path.resolve('lib/config.js');
 
   // console.log('html', typeof html);
   // console.log(html);
-  let html = fs.readFileSync('./tests/index-sem-loadingcss.html', 'utf8')
+  // let file = fs.readFileSync('./tests/testlocalbarra.html', 'utf8')
+  //const html = unescape(file);
+  const html = params.html.replace(/\\"/g, '\"')
+  //const html = Base64.decode(file);
   // console.log(html)
-  
+
   console.log(html.length + " characters, " + bytesToSize(Buffer.byteLength(html, 'utf8')));
 
   if (fs.existsSync(outputPDF)) {
@@ -66,7 +70,7 @@ module.exports.convert = (event, context, callback) => {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials' : true
+        'Access-Control-Allow-Credentials': true
       },
       body: output.toString('base64')
     });
